@@ -26,8 +26,8 @@ def reconhecer_mao():
         results = hands.process(imgRGB)
         h, w, _ = img.shape
 
-        left_display = (0, 0)
-        right_display = (0, 0)
+        left_display = (0, 0, False)
+        right_display = (0, 0, False)
 
         if results.multi_hand_landmarks:
             for idx, handLms in enumerate(results.multi_hand_landmarks):
@@ -42,24 +42,54 @@ def reconhecer_mao():
                     right_display = (distancia, angle, isClicking)
 
         # Mostrar valores no canto superior esquerdo (mão esquerda)
-        if left_display != (0, 0):
-            cv2.rectangle(img, (10, 10), (600, 100), (0, 0, 0), -1)
-            cv2.putText(img, f"Left Distancia: {left_display[0]}px", (20, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            cv2.putText(img, f"Left Angulo: {left_display[1]} deg", (20, 80),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-            cv2.putText(img, f"Clicks Left: {left_display[2]}", (20, 120),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+        if left_display != (0, 0, False):
+
+            box_width = 420
+            box_height = 130
+
+            x1 = 10
+            y1 = 10
+            x2 = x1 + box_width
+            y2 = y1 + box_height
+
+            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 0), -1)
+
+            cv2.putText(img, f"Left Distancia: {left_display[0]}px",
+            (x1 + 10, y1 + 30),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+            cv2.putText(img, f"Left Angulo: {left_display[1]} deg",
+            (x1 + 10, y1 + 65),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+
+            cv2.putText(img, f"Clicks Left: {left_display[2]}",
+            (x1 + 10, y1 + 100),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
         # Mostrar valores no canto superior direito (mão direita)
-        if right_display != (0, 0):
-            cv2.rectangle(img, (10, 10), (400, 150), (0, 0, 0), -1)
-            cv2.putText(img, f"Right Distancia: {right_display[0]}px", (w - 350, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-            cv2.putText(img, f"Right Angulo: {right_display[1]} deg", (w - 350, 80),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-            cv2.putText(img, f"Clicks mão direita: {right_display[2]}", (w - 350, 120),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+        if right_display != (0, 0, False):
+
+            box_width = 420
+            box_height = 130
+
+            x1 = w - box_width - 10
+            y1 = 10
+            x2 = w - 10
+            y2 = y1 + box_height
+
+            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 0), -1)
+
+            cv2.putText(img, f"Right Distancia: {right_display[0]}px",
+                (x1 + 10, y1 + 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+            cv2.putText(img, f"Right Angulo: {right_display[1]} deg",
+                (x1 + 10, y1 + 65),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+
+            cv2.putText(img, f"Clicks Right: {right_display[2]}",
+                (x1 + 10, y1 + 100),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
 
         cv2.imshow("imagem", img)
 
