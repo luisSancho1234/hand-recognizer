@@ -48,17 +48,17 @@ def reconhecer_mao():
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             cv2.putText(img, f"Left Angulo: {left_display[1]} deg", (20, 80),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-            cv2.putText(img, f"Clicks Left: {left_display[2]}", (20, 80),
+            cv2.putText(img, f"Clicks Left: {left_display[2]}", (20, 120),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
         # Mostrar valores no canto superior direito (mão direita)
         if right_display != (0, 0):
-            cv2.rectangle(img, (10, 10), (600, 100), (0, 0, 0), -1)
+            cv2.rectangle(img, (10, 10), (400, 150), (0, 0, 0), -1)
             cv2.putText(img, f"Right Distancia: {right_display[0]}px", (w - 350, 40),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             cv2.putText(img, f"Right Angulo: {right_display[1]} deg", (w - 350, 80),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-            cv2.putText(img, f"Clicks mão direita: {right_display[2]}", (w - 350, 80),
+            cv2.putText(img, f"Clicks mão direita: {right_display[2]}", (w - 350, 120),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
         cv2.imshow("imagem", img)
