@@ -2,7 +2,6 @@ import cv2
 import mediapipe as mp
 import math
 
-
 ###########################
 vw, vh = 1200, 480
 ###########################
@@ -12,10 +11,17 @@ video.set(3, vw)
 video.set(4, vh)
 
 mpHands = mp.solutions.hands
-hands = mpHands.Hands(max_num_hands=2)
+hands = mpHands.Hands(max_num_hands=1)
 mpDraw = mp.solutions.drawing_utils
 
+
 def reconhecer_mao():
+
+    clickLeft = 0
+    clickRight = 0
+    isClickingLeft = False
+    isClickingRight = False
+
     while True:
         ret, img = video.read()
         if not ret:
@@ -26,72 +32,55 @@ def reconhecer_mao():
         results = hands.process(imgRGB)
         h, w, _ = img.shape
 
-        left_display = (0, 0, False)
-        right_display = (0, 0, False)
+        left_display = None
+        right_display = None
 
         if results.multi_hand_landmarks:
             for idx, handLms in enumerate(results.multi_hand_landmarks):
-                distancia, angle, isClicking = draw_hand_info(img, handLms, w, h)
-                
-                # Detectar se é mão esquerda ou direita
+
                 hand_label = results.multi_handedness[idx].classification[0].label
-                
+
                 if hand_label == 'Left':
-                    left_display = (distancia, angle, isClicking)
+
+                    distancia, angle, isClickingLeft, clickBinary = draw_hand_info(
+                        img, handLms, w, h, isClickingLeft
+                    )
+
+                    clickLeft += clickBinary
+                    left_display = (distancia, angle, isClickingLeft, clickLeft)
+
                 else:
-                    right_display = (distancia, angle, isClicking)
 
-        # Mostrar valores no canto superior esquerdo (mão esquerda)
-        if left_display != (0, 0, False):
+                    distancia, angle, isClickingRight, clickBinary = draw_hand_info(
+                        img, handLms, w, h, isClickingRight
+                    )
 
-            box_width = 420
-            box_height = 130
+                    clickRight += clickBinary
+                    right_display = (distancia, angle, isClickingRight, clickRight)
 
-            x1 = 10
-            y1 = 10
-            x2 = x1 + box_width
-            y2 = y1 + box_height
+        # ================= DISPLAY ESQUERDA =================
+        if left_display:
 
-            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 0), -1)
+            draw_info_box(
+                img,
+                position="left",
+                width=w,
+                data=left_display,
+                label="Left"
+            )
 
-            cv2.putText(img, f"Left Distancia: {left_display[0]}px",
-            (x1 + 10, y1 + 30),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        # ================= DISPLAY DIREITA =================
+        if right_display:
 
-            cv2.putText(img, f"Left Angulo: {left_display[1]} deg",
-            (x1 + 10, y1 + 65),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+            draw_info_box(
+                img,
+                position="right",
+                width=w,
+                data=right_display,
+                label="Right"
+            )
 
-            cv2.putText(img, f"Clicks Left: {left_display[2]}",
-            (x1 + 10, y1 + 100),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-
-        # Mostrar valores no canto superior direito (mão direita)
-        if right_display != (0, 0, False):
-
-            box_width = 420
-            box_height = 130
-
-            x1 = w - box_width - 10
-            y1 = 10
-            x2 = w - 10
-            y2 = y1 + box_height
-
-            cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 0), -1)
-
-            cv2.putText(img, f"Right Distancia: {right_display[0]}px",
-                (x1 + 10, y1 + 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-
-            cv2.putText(img, f"Right Angulo: {right_display[1]} deg",
-                (x1 + 10, y1 + 65),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-
-            cv2.putText(img, f"Clicks Right: {right_display[2]}",
-                (x1 + 10, y1 + 100),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-
-        cv2.imshow("imagem", img)
+        cv2.imshow("Hand Recognizer", img)
 
         if cv2.waitKey(1) & 0xFF == 27:
             break
@@ -99,46 +88,89 @@ def reconhecer_mao():
     video.release()
     cv2.destroyAllWindows()
 
-clickLeft=0
-clickRight=0
-def draw_hand_info(img, hand_landmarks, w, h):
+
+def draw_hand_info(img, hand_landmarks, w, h, isClicking):
+
     thumb = hand_landmarks.landmark[4]
-    index = hand_landmarks.landmark[8]
-    isClicking = False
+    indexFinger = hand_landmarks.landmark[8]
 
     x0, y0 = int(thumb.x * w), int(thumb.y * h)
-    x1, y1 = int(index.x * w), int(index.y * h)
+    x1, y1 = int(indexFinger.x * w), int(indexFinger.y * h)
 
     # Linha e círculos
     cv2.line(img, (x0, y0), (x1, y1), (0, 255, 0), 2)
     cv2.circle(img, (x0, y0), 8, (0, 0, 255), -1)
     cv2.circle(img, (x1, y1), 8, (255, 0, 0), -1)
 
-    # Distância
     distancia = int(math.hypot(x1 - x0, y1 - y0))
 
-    #Detecção de cliques
-    if distancia < 30:
-        isClicking = True
+    clickAtual = distancia < 30
+    clickBinary = 0
 
+    # Detecta transição (aberto -> fechado)
+    if clickAtual and not isClicking:
+        clickBinary = 1
 
-    # Ângulo
-    angle, _ = angle_from_thumb(thumb, index, w, h)
+    isClicking = clickAtual
 
-    # Desenhar landmarks
+    angle, _ = angle_from_thumb(thumb, indexFinger, w, h)
+
     mpDraw.draw_landmarks(img, hand_landmarks, mpHands.HAND_CONNECTIONS)
 
-    return distancia, angle, isClicking
+    return distancia, angle, isClicking, clickBinary
+
+
+def draw_info_box(img, position, width, data, label):
+
+    distancia, angle, isClicking, clicks = data
+
+    box_width = 420
+    box_height = 160
+    margin = 10
+
+    if position == "left":
+        x1 = margin
+    else:
+        x1 = width - box_width - margin
+
+    y1 = margin
+    x2 = x1 + box_width
+    y2 = y1 + box_height
+
+    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 0), -1)
+
+    cv2.putText(img, f"{label} Distancia: {distancia}px",
+                (x1 + 10, y1 + 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+    cv2.putText(img, f"{label} Angulo: {angle} deg",
+                (x1 + 10, y1 + 65),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+
+    cv2.putText(img, f"Is Clicking: {isClicking}",
+                (x1 + 10, y1 + 100),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+
+    cv2.putText(img, f"Clicks: {clicks}",
+                (x1 + 10, y1 + 135),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
 
 def angle_from_thumb(thumb, index, w, h):
+
     x0, y0 = int(thumb.x * w), int(thumb.y * h)
     x1, y1 = int(index.x * w), int(index.y * h)
 
     dx = x1 - x0
-    dy = y0 - y1  # invertido pelo eixo da imagem
+    dy = y0 - y1  # eixo Y invertido
 
     angle = math.degrees(math.atan2(dy, dx))
+
     if angle < 0:
         angle += 360
+
     return int(angle), (x0, y0)
+
+
+# Executar
+reconhecer_mao()
